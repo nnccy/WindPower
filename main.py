@@ -55,18 +55,6 @@ if os.path.isfile(log_file) and not paras.test:  #判断是否为文件
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 logging = SimpleLogger(log_file) #log to file
 configure(paras.save) #tensorboard logging
 logging('Args: {}'.format(paras))
@@ -159,7 +147,7 @@ val_pred.loc[:, ['风速', '风向']] = all
 val_pred["风速"] = val_pred["风速"].astype('float64')
 val_pred["风向"] = val_pred["风向"].astype('float64')
 val_pred.to_csv('./data/dev_pred.csv', float_format='%.4f', index=False, encoding='utf-8')
-cal_R()#计算得分
+logging('Score', cal_R())#计算得分
 Compare_dev_result(dm,paras.save)
 
 "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"

@@ -20,6 +20,7 @@ import sys
 import traceback
 import shutil
 
+
 parser = argparse.ArgumentParser(description='Models for Continuous Stirred Tank dataset')
 parser.add_argument("--test", action="store_true", help="Testing model in para.save")
 parser.add_argument("--seed", type=int, default=None, help="random seed")
@@ -51,6 +52,19 @@ if os.path.isfile(log_file) and not paras.test:  #判断是否为文件
             sys.exit()  # do not overwrite folder with current experiment
         else:  # reset folder
             shutil.rmtree(paras.save, ignore_errors=True) #递归地删除文件夹
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 logging = SimpleLogger(log_file) #log to file

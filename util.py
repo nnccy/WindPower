@@ -34,7 +34,7 @@ class SimpleLogger(object):
             print('Warning: could not log to', self.f)
 
 
-def visualize_prediction_compare(X, Y, Y_pre=None, dir_name='visualizations'):
+def visualize_prediction_compare(X, Y, Y_pre=None, dir_name='visualizations',png_name='name'):
     plt.figure(figsize=(15, 8))
     outputs_names = ['wind speed', 'wind direction']
     X_length = np.arange(0, 120)
@@ -51,7 +51,10 @@ def visualize_prediction_compare(X, Y, Y_pre=None, dir_name='visualizations'):
         plt.plot(Y_length, y_pred_i, '-r', label='Y_pre')
 
     plt.legend()
-    plt.savefig(dir_name + '.png')
+    os.makedirs(dir_name.encode('utf-8'))
+    file = str((dir_name + '.png').encode('utf-8'),encoding = "utf-8")
+    ff = open(file.encode('utf-8'), mode='w')
+    plt.savefig(ff)
     plt.close()
 
 
@@ -136,7 +139,8 @@ def Compare_dev_result(dm,dir):
     #     data = {field[f]: dm.val_indexes[field[f]][0] for f in range(field_len)},
     #     index = period
     # ).to_csv('val_indexes.csv', float_format='%.4f', encoding='utf-8')
-
+    new_season = np.array(['Spring', 'Summer', 'Autumn', 'Winter'])
+    new_period = np.array([f'{s}_{str(i).zfill(2)}' for s in season for i in range(1, 20 + 1)])
     w_df = pd.DataFrame(
         index=np.arange(80 * 14),
         columns = ['时段', '时刻', '风速', '风向']
@@ -167,4 +171,4 @@ def Compare_dev_result(dm,dir):
                 val_df.loc[:, ['变频器电网侧有功功率', '外界温度']] = dm.X_[f, dm.val_indexes[field[f]][0][p], m]
                 val_df.loc[:, ['风速', '风向']] = dm.X0[f, dm.val_indexes[field[f]][0][p], m]
                 #val_df.to_csv(os.path.join(root, field[f], machine[f][m], period[p]) + '.csv', float_format='%.7f', index=False, encoding='utf-8')
-                visualize_prediction_compare(dm.X0[f, dm.val_indexes[field[f]][0][p], m],dm.Y0[f, dm.val_indexes[field[f]][0][p], m],Y_pre = var_pred[i*20:(i+1)*20,:],dir_name=os.path.join(dir, field[f], machine[f][m], period[p]))
+                visualize_prediction_compare(dm.X0[f, dm.val_indexes[field[f]][0][p], m],dm.Y0[f, dm.val_indexes[field[f]][0][p], m],Y_pre = var_pred[i*20:(i+1)*20,:],dir_name=os.path.join(dir, field[f], machine[f][m]), png_name=new_period[p])

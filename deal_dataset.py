@@ -359,7 +359,7 @@ class Data_Manager():
     # 生成验证机结果
     def generate_dev(self):
         # 生成验证机结果
-
+        print("生成验证集")
         pd.DataFrame(
             data={field[f]: self.val_indexes[field[f]][0] for f in range(field_len)},
             index=period

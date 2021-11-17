@@ -361,10 +361,10 @@ class Data_Manager():
     def generate_dev(self):
         # 生成验证机结果
 
-        # pd.DataFrame(
-        #     data={field[f]: self.val_indexes[field[f]][0] for f in range(field_len)},
-        #     index=period
-        # ).to_csv('val_indexes.csv', float_format='%.4f', encoding='utf-8')
+        pd.DataFrame(
+            data={field[f]: self.val_indexes[field[f]][0] for f in range(field_len)},
+            index=period
+        ).to_csv('val_indexes.csv', float_format='%.4f', encoding='utf-8')
 
         w_df = pd.DataFrame(
             index=np.arange(80 * 14),

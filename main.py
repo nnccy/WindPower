@@ -85,7 +85,16 @@ times = 1
 dm.generate_indexes(times) #验证集索引
 dm.generate_dev() #生成验证集和验证集结果
 
+"------------------------------遍历访问 ---------------------------------"
+val_indexes_df = read_csv('./data/val_indexes.csv')
+val_indexes = {field[f]: {0: val_indexes_df[field[f]].values} for f in range(field_len)}
+for f in range(field_len):
+    indexes = dm.get_indexes(f)
+    print(field[f], dm.X0[f, indexes].shape)
 
+
+
+"----------------------------------------------------------------------"
 if paras.mymodel == 'lstm':
     model = LSTM()
 

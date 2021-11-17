@@ -10,6 +10,8 @@ from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 plt.switch_backend('agg')
 import itertools
 import time
+from deal_dataset import *
+
 
 class SimpleLogger(object):
     def __init__(self, f, header='#logger output'):
@@ -128,3 +130,41 @@ def cal_R():
     print(f'R: {R:.3f}')
 
 
+
+def Compare_dev_result(dm,dir):
+    # pd.DataFrame(
+    #     data = {field[f]: dm.val_indexes[field[f]][0] for f in range(field_len)},
+    #     index = period
+    # ).to_csv('val_indexes.csv', float_format='%.4f', encoding='utf-8')
+
+    w_df = pd.DataFrame(
+        index=np.arange(80 * 14),
+        columns = ['时段', '时刻', '风速', '风向']
+    )
+    w_df.loc[:, ['时段', '时刻']] = np.array(list(itertools.product(period, np.arange(-11, 2+1))))
+
+    df = pd.DataFrame(
+        data = {'time': np.arange(1, 121) * 30},
+        columns = ['time', '变频器电网侧有功功率', '外界温度', '风速', '风向']
+    )
+
+    val_true_df = dm.sample.copy()
+    val_pred_df = read_csv('./data/dev_pred.csv') #读取预测结果文件
+
+    var_pred = np.array(val_pred_df[['风速', '风向']])
+
+    #print(var_pred)
+    i = -1
+    root = dir
+    os.makedirs(root, exist_ok=True)
+    for f in range(field_len):
+        os.makedirs(os.path.join(root, field[f]).encode('utf-8'), exist_ok=True)
+        for m in tqdm(range(machine_len)):
+            os.makedirs(os.path.join(root, field[f], machine[f][m]).encode('utf-8'), exist_ok=True)
+            for p in range(period_len):
+                i += 1
+                val_df = df.copy()
+                val_df.loc[:, ['变频器电网侧有功功率', '外界温度']] = dm.X_[f, dm.val_indexes[field[f]][0][p], m]
+                val_df.loc[:, ['风速', '风向']] = dm.X0[f, dm.val_indexes[field[f]][0][p], m]
+                #val_df.to_csv(os.path.join(root, field[f], machine[f][m], period[p]) + '.csv', float_format='%.7f', index=False, encoding='utf-8')
+                visualize_prediction_compare(dm.X0[f, dm.val_indexes[field[f]][0][p], m],dm.Y0[f, dm.val_indexes[field[f]][0][p], m],Y_pre = var_pred[i*20:(i+1)*20,:],dir_name=os.path.join(dir, field[f], machine[f][m], period[p]))

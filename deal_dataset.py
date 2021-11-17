@@ -199,7 +199,7 @@ class Data_Manager():
         self.test_W  : shape: (2, 80, 14, 2)            气象数据，用作测试；特征 ['风速', '风向']
         """
 
-        root = '测试集_决赛' if test_findals else '测试集_初赛'
+        root = './data/测试集_决赛' if test_findals else './data/测试集_初赛'
 
         print(f'正在加载 {root}')
 
@@ -284,7 +284,6 @@ class Data_Manager():
                 for i in range(val_times):
                     self.val_indexes[field[f]][i] = np.hstack([self.val_indexes[field[f]][i], val_indexes[i]]).astype(
                         int)
-            aaa = 0
 
     def get_indexes(self, f):
         indexes = np.array([])
@@ -364,7 +363,7 @@ class Data_Manager():
         pd.DataFrame(
             data={field[f]: self.val_indexes[field[f]][0] for f in range(field_len)},
             index=period
-        ).to_csv('val_indexes.csv', float_format='%.4f', encoding='utf-8')
+        ).to_csv('./data/val_indexes.csv', float_format='%.4f', encoding='utf-8')
 
         w_df = pd.DataFrame(
             index=np.arange(80 * 14),
@@ -379,17 +378,19 @@ class Data_Manager():
 
         val_true_df = self.sample.copy()
 
-        root = os.path.join('data', 'dev').encode('utf-8')
+        root = os.path.join('data', 'dev')
         os.makedirs(root, exist_ok=True)
         for f in range(field_len):
-            os.makedirs(os.path.join(root, field[f]), exist_ok=True)
+            os.makedirs(os.path.join(root, field[f]).encode('utf-8'), exist_ok=True)
             for m in tqdm(range(machine_len)):
-                os.makedirs(os.path.join(root, field[f], machine[f][m]), exist_ok=True)
+                os.makedirs(os.path.join(root, field[f], machine[f][m]).encode('utf-8'), exist_ok=True)
                 for p in range(period_len):
                     val_df = df.copy()
                     val_df.loc[:, ['变频器电网侧有功功率', '外界温度']] = self.X_[f, self.val_indexes[field[f]][0][p], m]
                     val_df.loc[:, ['风速', '风向']] = self.X0[f, self.val_indexes[field[f]][0][p], m]
-                    val_df.to_csv(os.path.join(root, field[f], machine[f][m], period[p]) + '.csv', float_format='%.7f',
+
+                    ff = open((os.path.join(root, field[f], machine[f][m], period[p]) + '.csv').encode('utf-8'),mode='w', encoding="utf-8")
+                    val_df.to_csv(ff, float_format='%.7f',
                                   index=False, encoding='utf-8')
 
                     val_true_df.loc[(val_true_df['风场'] == field[f]) & (val_true_df['风机'] == machine[f][m]) & (
@@ -398,8 +399,9 @@ class Data_Manager():
 
             val_w_df = w_df.copy()
             val_w_df.loc[:, ['风速', '风向']] = self.W[f, self.val_indexes[field[f]][0]].reshape(80 * 14, 2)
-            val_w_df.to_csv(os.path.join(root, field[f], 'weather.csv'), float_format='%.3f', index=False,
+            ff2 = open(os.path.join(root, field[f], 'weather.csv').encode('utf-8'),mode='w', encoding="utf-8")
+            val_w_df.to_csv(ff2, float_format='%.3f', index=False,
                             encoding='utf-8')
         dev_true_path = os.path.join('data', 'dev_true.csv').encode('utf-8')
-        ff = open(dev_true_path, mode='w', encoding="utf-8")
-        val_true_df.fillna(0).to_csv(ff, float_format='%.4f', index=False, encoding='utf-8')
+        ff3 = open(dev_true_path, mode='w', encoding="utf-8")
+        val_true_df.fillna(0).to_csv(ff3, float_format='%.4f', index=False, encoding='utf-8')

@@ -71,13 +71,11 @@ def read_csv(path):
 class Data_Manager():
     def __init__(self):
         super().__init__()
-        self.root = '训练集'
+        self.root = os.path.join('data','训练集')
 
         if self._check_file:  # 看是不是已经merge训练集
             print('正在合并同一台风机的数据并修复缺失的时间段')
             self._merge_data
-
-        self._prepare_dataset
 
         # itertools.product，对应有序的重复抽样过程
         self.sample = pd.DataFrame(
@@ -97,8 +95,8 @@ class Data_Manager():
         print(self.sample)
         self.test_pred_df = self.sample.copy()  # 这里应该是最后预测生成的结果，内容是最后要提交的文件，但是风速和风向没有
 
-    @property
-    def _prepare_dataset(self):
+
+    def load_train_data(self):
 
         """
                        [风场, 时段, 风机, 时刻, 特征]
@@ -153,9 +151,9 @@ class Data_Manager():
 
             self.weather['data'][f, 25, ...] = weather[field[f]][['wind_spd', 'wind_dir']].values
 
-            for m in tqdm(range(machine_len)):  # tqdm进度条
+            for m in range(machine_len):  #所有风机全部加载
                 datas = read_csv(os.path.join(self.root, field[f], machine[f][m]) + '.csv')
-
+                print(os.path.join(self.root, field[f], machine[f][m]) + '.csv')
                 # 11*120+1 : 正数第11个小时30秒开始
                 # -2*120+1 : 倒数第2个小时结束（不包含最后2小时）
                 # 每一个时段由每小时的第30秒开始第3600秒结束，共120个时刻
@@ -299,26 +297,30 @@ class Data_Manager():
     @property
     def _merge_data(self):
 
-        os.makedirs(self.root, exist_ok=True)
-        [os.makedirs(os.path.join(self.root, field[f]), exist_ok=True) for f in range(field_len)]
-        [shutil.copyfile(os.path.join('train', field[f], 'weather.csv'),
-                         os.path.join(self.root, field[f], 'weather.csv')) for f in range(field_len)]
+        os.makedirs(self.root.encode('utf-8'), exist_ok=True)
+        [os.makedirs(os.path.join(self.root, field[f]).encode('utf-8'), exist_ok=True) for f in range(field_len)]
+        [shutil.copyfile(os.path.join('data','train', field[f], 'weather.csv').encode('utf-8'),
+                         os.path.join(self.root, field[f], 'weather.csv').encode('utf-8')) for f in range(field_len)]
 
         for f in range(field_len):
             for m in range(machine_len):
 
-                machine_dir = os.path.join('train', field[f], machine[f][m])
+                machine_dir = os.path.join('data','train', field[f], machine[f][m])
 
                 machine_data_save_path = os.path.join(self.root, field[f], machine[f][m]) + '.csv'
 
                 print(f'Merge {machine_dir} to {machine_data_save_path} ... \t', end='')
 
                 # 用文件操作的方式将两年的数据合并, 用 pandas 合并太慢了
-                with open(machine_data_save_path, 'a', encoding='utf-8') as f1:
+                with open(machine_data_save_path.encode('utf-8'), 'a', encoding='utf-8') as f1:
                     f1.write('time,变频器电网侧有功功率,外界温度,风向,风速\n')  # 列名
-                    for data_file in os.listdir(machine_dir):
-                        with open(os.path.join(machine_dir, data_file), 'r', encoding='utf-8') as f2:
-                            f1.writelines(f2.readlines()[1:])  # [1:] -> 首行是列名，不写入
+                    for data_file in os.listdir(machine_dir.encode('utf-8')):
+                        if str(data_file, encoding = "utf-8") == '.ipynb_checkpoints':
+                            shutil.rmtree(os.path.join(machine_dir,str(data_file, encoding = "utf-8")).encode('utf-8'))
+                        else:
+                            with open(os.path.join(machine_dir,str(data_file, encoding = "utf-8")).encode('utf-8'), 'r', encoding='utf-8') as f2:
+
+                                f1.writelines(f2.readlines()[1:])  # [1:] -> 首行是列名，不写入
 
                 # 根据 'time' 这一列合并数据
                 df = pd.merge(
@@ -328,9 +330,17 @@ class Data_Manager():
                     on=['time']
                 )
 
-                df.loc[:, ['time', '变频器电网侧有功功率', '外界温度', '风速', '风向']].to_csv(machine_data_save_path,
-                                                                             float_format='%.7f', index=False,
-                                                                             encoding='utf-8')
+
+                ff = open(machine_data_save_path.encode('utf-8'),mode='w', encoding="utf-8")
+                #print(ff)
+                xunlian = df.loc[:, ['time', '变频器电网侧有功功率', '外界温度', '风速', '风向']]
+                xunlian
+                xunlian["变频器电网侧有功功率"] = xunlian["变频器电网侧有功功率"].astype('float64')
+                xunlian["外界温度"] = xunlian["外界温度"].astype('float64')
+                xunlian["风速"] = xunlian["风速"].astype('float64')
+                xunlian["风向"] = xunlian["风向"].astype('float64')
+
+                xunlian.to_csv(ff,float_format='%.7f', index=False, encoding="utf-8")
 
                 print('done!')
 
@@ -346,3 +356,50 @@ class Data_Manager():
             if not os.path.exists(file.encode('utf-8')):
                 return True
         return False
+
+    # 生成验证机结果
+    def generate_dev(self):
+        # 生成验证机结果
+
+        # pd.DataFrame(
+        #     data={field[f]: self.val_indexes[field[f]][0] for f in range(field_len)},
+        #     index=period
+        # ).to_csv('val_indexes.csv', float_format='%.4f', encoding='utf-8')
+
+        w_df = pd.DataFrame(
+            index=np.arange(80 * 14),
+            columns=['时段', '时刻', '风速', '风向']
+        )
+        w_df.loc[:, ['时段', '时刻']] = np.array(list(itertools.product(period, np.arange(-11, 2 + 1))))
+
+        df = pd.DataFrame(
+            data={'time': np.arange(1, 121) * 30},
+            columns=['time', '变频器电网侧有功功率', '外界温度', '风速', '风向']
+        )
+
+        val_true_df = self.sample.copy()
+
+        root = os.path.join('data', 'dev').encode('utf-8')
+        os.makedirs(root, exist_ok=True)
+        for f in range(field_len):
+            os.makedirs(os.path.join(root, field[f]), exist_ok=True)
+            for m in tqdm(range(machine_len)):
+                os.makedirs(os.path.join(root, field[f], machine[f][m]), exist_ok=True)
+                for p in range(period_len):
+                    val_df = df.copy()
+                    val_df.loc[:, ['变频器电网侧有功功率', '外界温度']] = self.X_[f, self.val_indexes[field[f]][0][p], m]
+                    val_df.loc[:, ['风速', '风向']] = self.X0[f, self.val_indexes[field[f]][0][p], m]
+                    val_df.to_csv(os.path.join(root, field[f], machine[f][m], period[p]) + '.csv', float_format='%.7f',
+                                  index=False, encoding='utf-8')
+
+                    val_true_df.loc[(val_true_df['风场'] == field[f]) & (val_true_df['风机'] == machine[f][m]) & (
+                                val_true_df['时段'] == period[p]), ['风速', '风向']] = self.Y0[
+                        f, self.val_indexes[field[f]][0][p], m]
+
+            val_w_df = w_df.copy()
+            val_w_df.loc[:, ['风速', '风向']] = self.W[f, self.val_indexes[field[f]][0]].reshape(80 * 14, 2)
+            val_w_df.to_csv(os.path.join(root, field[f], 'weather.csv'), float_format='%.3f', index=False,
+                            encoding='utf-8')
+        dev_true_path = os.path.join('data', 'dev_true.csv').encode('utf-8')
+        ff = open(dev_true_path, mode='w', encoding="utf-8")
+        val_true_df.fillna(0).to_csv(ff, float_format='%.4f', index=False, encoding='utf-8')

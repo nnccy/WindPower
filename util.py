@@ -99,8 +99,8 @@ def standardize(val_df):
     ).fillna(0)
 # 计算分数
 def cal_R():
-    val_true = standardize(pd.read_csv('val_true.csv', encoding='utf-8'))  #验证集真实值
-    val_pred = standardize(pd.read_csv('val_pred.csv', encoding='utf-8'))  #验证集预测值
+    val_true = standardize(pd.read_csv('./data/dev_true.csv', encoding='utf-8'))  #验证集真实值
+    val_pred = standardize(pd.read_csv('./data/dev_pred.csv', encoding='utf-8'))  #验证集预测值
 
     # 公式 6
     w = np.arange(2 * 25 * 80 * 20, dtype=float) % 20
